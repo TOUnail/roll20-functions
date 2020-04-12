@@ -38,10 +38,43 @@ app.get("/posts", (req, res) => {
     .catch((err) => console.error(err));
 });
 
-app.post("/post", (req, res) => {
+const FBAuth = (req, res, next) => {
+  let idToken;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer ")
+  ) {
+    idToken = req.headers.authorization.split("Bearer ")[1];
+  } else {
+    console.error("No token found");
+    return res.status(403).json({ error: "Unauthorized" });
+  }
+  admin
+    .auth()
+    .verifyIdToken(idToken)
+    .then((decodedToken) => {
+      req.user = decodedToken;
+      console.log(decodedToken);
+      return db
+        .collection("users")
+        .where("userId", "==", req.user.uid)
+        .limit(1)
+        .get();
+    })
+    .then((data) => {
+      req.user.handle = data.docs[0].data().handle;
+      return next();
+    })
+    .catch((err) => {
+      console.error("Error while verifying token ", err);
+      return res.status(403).json(err);
+    });
+};
+
+app.post("/post", FBAuth, (req, res) => {
   const newPost = {
     body: req.body.body,
-    userHandle: req.body.userHandle,
+    userHandle: req.user.handle,
     createdAt: new Date().toISOString(),
     roll: Math.floor(Math.random() * 20) + 1,
   };
@@ -90,7 +123,6 @@ app.post("/signup", (req, res) => {
   if (isEmpty(newUser.handle)) errors.handle = "Must not be empty";
   if (Object.keys(errors).length > 0) return res.status(400).json(errors);
 
-  //TODO: validate data
   let token, userId;
   db.doc(`/users/${newUser.handle}`)
     .get()
