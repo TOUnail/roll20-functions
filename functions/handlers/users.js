@@ -1,6 +1,7 @@
 const { admin, db } = require("../util/admin");
 const config = require("../util/config");
 const firebase = require("firebase");
+const { v4: uuidv4 } = require("uuid");
 firebase.initializeApp(config);
 const { validateSignupData, validateLoginData } = require("../util/validators");
 
@@ -110,16 +111,19 @@ exports.uploadImage = (req, res) => {
       .storage()
       .bucket(config.storageBucket)
       .upload(imageToBeUploaded.filepath, {
+        destination: "profile/" + imageFileName,
+        gzip: true,
         resumable: false,
         metadata: {
           metadata: {
             contentType: imageToBeUploaded.mimetype,
+            firebaseStorageDownloadTokens: uuidv4(),
           },
         },
       })
       .then(() => {
         const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2F${imageFileName}?alt=media`;
-        return db.doc(`/user/${req.user.handle}`).update({ imageUrl });
+        return db.doc(`/users/${req.user.handle}`).update({ imageUrl });
       })
       .then(() => {
         return res.json({ message: "Image uploaded successfully" });
