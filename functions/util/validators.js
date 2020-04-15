@@ -37,3 +37,12 @@ exports.validateLoginData = (data) => {
     valid: Object.keys(errors).length === 0 ? true : false,
   };
 };
+
+exports.reduceUserDetails = (data) => {
+  let userDetails = {};
+
+  if (!isEmpty(data.alignment.trim())) userDetails.alignment = data.alignment;
+  if (!isEmpty(data.title.trim())) userDetails.title = data.title;
+
+  return userDetails;
+};
