@@ -3,7 +3,12 @@ const functions = require("firebase-functions");
 const app = require("express")();
 const FBAuth = require("./util/FBAuth");
 
-const { getAllPosts, postOnePost } = require("./handlers/posts");
+const {
+  getAllPosts,
+  postOnePost,
+  getPost,
+  commentOnPost,
+} = require("./handlers/posts");
 const {
   signup,
   login,
@@ -15,6 +20,11 @@ const {
 // Posts Routes
 app.get("/posts", getAllPosts);
 app.post("/post", FBAuth, postOnePost);
+app.get("/post/:postId", getPost);
+// TODO delete post
+// TODO like post
+// TODO unlike post
+app.post("/post/:postId/comment", FBAuth, commentOnPost);
 
 // Users Routes
 app.post("/signup", signup);
@@ -23,4 +33,5 @@ app.post("/user/image", FBAuth, uploadProfileImage);
 app.post("/user", FBAuth, addUserDetails);
 app.get("/user", FBAuth, getAuthenticatedUser);
 
+//https://github.com/AlexanderHMagno/ideally_functions/tree/master/functions/handlers
 exports.api = functions.https.onRequest(app);
