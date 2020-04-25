@@ -109,56 +109,59 @@ exports.getAuthenticatedUser = async (req, res) => {
 };
 
 //Upload profile image
-exports.uploadProfileImage = (req, res) => {
-  const BusBoy = require("busboy");
-  const path = require("path");
-  const os = require("os");
-  const fs = require("fs");
+exports.uploadProfileImage = async (req, res) => {
+  const BusBoy = require("busboy"),
+    path = require("path"),
+    os = require("os"),
+    fs = require("fs");
 
   const busboy = new BusBoy({ headers: req.headers });
   let imageFileName;
   let imageToBeUploaded = {};
-  busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+  busboy.on("file", async (fieldname, file, filename, encoding, mimetype) => {
     if (mimetype !== "image/jpeg" && mimetype !== "image/png") {
-      return res.status(400).json({ error: "Wrong file type submitted" });
+      res.status(400).json({ error: "Wrong file type submitted" });
+      return false;
     }
-    console.log(fieldname);
-    console.log(filename);
-    console.log(mimetype);
     const imageExtension = filename.split(".")[filename.split(".").length - 1];
     imageFileName = `${Math.round(
       Math.random() * 100000000000
     )}.${imageExtension}`;
     const filepath = path.join(os.tmpdir(), imageFileName);
-    imageToBeUploaded = { filepath, mimetype };
-    file.pipe(fs.createWriteStream(filepath));
+    try {
+      imageToBeUploaded = { filepath, mimetype };
+      console.log(fieldname);
+      console.log(filename);
+      console.log(mimetype);
+      file.pipe(fs.createWriteStream(filepath));
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.code });
+    }
   });
-  busboy.on("finish", () => {
-    admin
-      .storage()
-      .bucket(config.storageBucket)
-      .upload(imageToBeUploaded.filepath, {
-        destination: "profile/" + imageFileName,
-        gzip: true,
-        resumable: false,
-        metadata: {
+  busboy.on("finish", async () => {
+    try {
+      await admin
+        .storage()
+        .bucket(config.storageBucket)
+        .upload(imageToBeUploaded.filepath, {
+          destination: "profile/" + imageFileName,
+          gzip: true,
+          resumable: false,
           metadata: {
-            contentType: imageToBeUploaded.mimetype,
-            firebaseStorageDownloadTokens: uuidv4(),
+            metadata: {
+              contentType: imageToBeUploaded.mimetype,
+              firebaseStorageDownloadTokens: uuidv4(),
+            },
           },
-        },
-      })
-      .then(() => {
-        const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2F${imageFileName}?alt=media`;
-        return db.doc(`/users/${req.user.handle}`).update({ imageUrl });
-      })
-      .then(() => {
-        return res.json({ message: "Image uploaded successfully" });
-      })
-      .catch((err) => {
-        console.error(err);
-        return res.status(500).json({ error: err.code });
-      });
+        });
+      const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2F${imageFileName}?alt=media`;
+      await db.doc(`/users/${req.user.handle}`).update({ imageUrl });
+      res.json({ message: "Image uploaded successfully" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: err.code });
+    }
   });
   busboy.end(req.rawBody);
 };
