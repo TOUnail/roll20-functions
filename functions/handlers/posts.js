@@ -131,3 +131,44 @@ exports.likePost = async (req, res) => {
     res.status(500).json(err);
   }
 };
+
+exports.likeComment = async (req, res) => {
+  try {
+    const likeCommentDocument = await db
+      .collection("likes")
+      .where("userHandle", "==", req.user.handle)
+      .where("commentId", "==", req.params.commentId)
+      .limit(1)
+      .get();
+
+    if (likeCommentDocument.empty) {
+      const commentDocument = await db
+        .doc(`/comments/${req.params.commentId}`)
+        .get();
+      if (commentDocument.exists) {
+        let likeCount = { likeCount: 1 };
+        let commentData = commentDocument.data();
+        if (commentData.likecount)
+          likeCount.likeCount = commentData.likeCount + 1;
+        await db.doc(`/comments/${req.params.commentId}`).update(likeCount);
+        await db.collection("likes").add({
+          userHandle: req.user.handle,
+          commentId: req.params.commentId,
+        });
+        commentData = {
+          ...commentData,
+          ...likeCount,
+          commentId: commentDocument.id,
+        };
+        res.status(200).json({ commentData });
+      } else {
+        res.status(400).json({ error: "Comment not found" });
+      }
+    } else {
+      res.status(400).json({ message: "Comment already liked" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json(err);
+  }
+};
