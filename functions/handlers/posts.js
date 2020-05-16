@@ -132,6 +132,36 @@ exports.likePost = async (req, res) => {
   }
 };
 
+exports.unlikePost = async (req, res) => {
+  try {
+    const likeDocument = await db
+      .collection("likes")
+      .where("userHandle", "==", req.user.handle)
+      .where("postId", "==", req.params.postId)
+      .limit(1)
+      .get();
+
+    if (!likeDocument.empty) {
+      likeDocument.forEach(async (el) => await el.ref.delete());
+
+      const post = await db.doc(`/posts/${req.params.postId}`).get();
+      let postInfo = post.data();
+      let likeCount = { likeCount: 0 };
+      if (postInfo.likeCount) {
+        likeCount.likeCount = postInfo.likeCount - 1;
+      }
+      await db.doc(`/posts/${req.params.postId}`).update(likeCount);
+      postInfo = { ...postInfo, ...likeCount, postId: post.id };
+      res.status(200).json({ message: "Post has been unliked", postInfo });
+    } else {
+      res.status(400).json({ message: "Post has not been liked by the user" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ err });
+  }
+};
+
 exports.likeComment = async (req, res) => {
   try {
     const likeCommentDocument = await db
@@ -170,5 +200,39 @@ exports.likeComment = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json(err);
+  }
+};
+
+exports.unlikeComment = async (req, res) => {
+  try {
+    const likeCommentDocument = await db
+      .collection("likes")
+      .where("userHandle", "==", req.user.handle)
+      .where("commentId", "==", req.params.commentId)
+      .limit(1)
+      .get();
+
+    if (!likeCommentDocument.empty) {
+      likeCommentDocument.forEach(async (el) => await el.ref.delete());
+
+      const comment = await db.doc(`/comments/${req.params.commentId}`).get();
+      let commentInfo = comment.data();
+      let likeCount = { likeCount: 0 };
+      if (commentInfo.likeCount) {
+        likeCount.likeCount = commentInfo.likeCount - 1;
+      }
+      await db.doc(`/comments/${req.params.commentId}`).update(likeCount);
+      commentInfo = { ...commentInfo, ...likeCount, commentId: comment.id };
+      res
+        .status(200)
+        .json({ message: "Comment has been unliked", commentInfo });
+    } else {
+      res
+        .status(400)
+        .json({ message: "Comment has not been liked by the user" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ err });
   }
 };
