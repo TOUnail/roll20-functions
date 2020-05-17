@@ -13,6 +13,7 @@ const {
   likeComment,
   unlikeComment,
   deletePost,
+  deleteComment,
 } = require("./handlers/posts");
 const {
   signup,
@@ -32,6 +33,7 @@ app.get("/post/:postId/unlike", FBAuth, unlikePost);
 app.post("/post/:postId/comment", FBAuth, commentOnPost);
 app.get("/comment/:commentId/like", FBAuth, likeComment);
 app.get("/comment/:commentId/unlike", FBAuth, unlikeComment);
+app.delete("/comment/:commentId", FBAuth, deleteComment);
 
 // Users Routes
 app.post("/signup", signup);

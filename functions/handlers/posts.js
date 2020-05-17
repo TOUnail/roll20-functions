@@ -257,3 +257,19 @@ exports.deletePost = async (req, res) => {
     res.status(404).json({ message: "Post not found" });
   }
 };
+
+exports.deleteComment = async (req, res) => {
+  const document = db.doc(`/comments/${req.params.commentId}`);
+  const getDocument = await document.get();
+
+  if (getDocument.exists) {
+    if (getDocument.data().userHandle !== req.user.handle) {
+      res.status(403).json({ error: "Unauthorized" });
+    } else {
+      await document.delete();
+      res.status(200).json({ message: "Comment has been deleted" });
+    }
+  } else {
+    res.status(404).json({ message: "Comment not found" });
+  }
+};
