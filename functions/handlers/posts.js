@@ -10,6 +10,8 @@ exports.getAllPosts = async (req, res) => {
         body: doc.data().body,
         userHandle: doc.data().userHandle,
         createdAt: doc.data().createdAt,
+        commentCount: doc.data().commentCount,
+        likeCount: doc.data().likeCount,
         roll: doc.data().roll,
       });
     });
@@ -91,6 +93,9 @@ exports.commentOnPost = async (req, res) => {
       res.status(404).json({ error: "Post not found" });
     }
     await db.collection("comments").add(newComment);
+    await db
+      .doc(`/posts/${req.params.postId}`)
+      .update({ commentCount: data.data().commentCount + 1 });
     res.json(newComment);
   } catch (err) {
     console.error(err);
@@ -234,5 +239,21 @@ exports.unlikeComment = async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ err });
+  }
+};
+
+exports.deletePost = async (req, res) => {
+  const document = db.doc(`/posts/${req.params.postId}`);
+  const getDocument = await document.get();
+
+  if (getDocument.exists) {
+    if (getDocument.data().userHandle !== req.user.handle) {
+      res.status(403).json({ error: "Unauthorized" });
+    } else {
+      await document.delete();
+      res.status(200).json({ message: "Post has been deleted" });
+    }
+  } else {
+    res.status(404).json({ message: "Post not found" });
   }
 };
