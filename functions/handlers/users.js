@@ -84,7 +84,32 @@ exports.addUserDetails = async (req, res) => {
     res.status(500).json({ error: err.code });
   }
 };
-
+//Get any user's details
+exports.getUserDetails = async (req, res) => {
+  try {
+    let userData = await db.doc(`/users/${req.params.handle}`).get();
+    if (userData.exists) {
+      let userInfo = {
+        user: userData.data(),
+        posts: [],
+      };
+      const posts = await db
+        .collection("posts")
+        .where("userHandle", "==", req.params.handle)
+        .orderBy("createdAt", "desc")
+        .get();
+      posts.forEach((doc) => {
+        userInfo.posts.push({ postId: doc.id, ...doc.data() });
+      });
+      res.status(200).json({ userInfo });
+    } else {
+      res.status(404).json({ error: "User not found" });
+    }
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: err.code });
+  }
+};
 //Get own user details
 exports.getAuthenticatedUser = async (req, res) => {
   let userData = {};
@@ -99,6 +124,20 @@ exports.getAuthenticatedUser = async (req, res) => {
         .get();
       likes.forEach((like) => {
         userData.likes.push(like.data());
+      });
+      userData.notifications = [];
+      const notifications = await db
+        .collection("notifications")
+        .where("recipient", "==", req.user.handle)
+        .where("read", "==", false)
+        .orderBy("createdAt", "desc")
+        .limit(10)
+        .get();
+      notifications.forEach((doc) => {
+        userData.notifications.push({
+          ...doc.data(),
+          notificationId: doc.id,
+        });
       });
       res.status(200).json({ ...userData });
     }
@@ -164,4 +203,18 @@ exports.uploadProfileImage = async (req, res) => {
     }
   });
   busboy.end(req.rawBody);
+};
+
+exports.markNotificationsRead = async (req, res) => {
+  let batch = db.batch();
+  req.body.forEach((notificationId) => {
+    const notification = db.doc(`/notifications/${notificationId}`);
+    batch.update(notification, { read: true });
+  });
+  try {
+    await batch.commit();
+    res.status(200).json({ message: "Notifications marked read" });
+  } catch (err) {
+    res.status(500).json({ err });
+  }
 };

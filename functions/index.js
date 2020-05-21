@@ -23,6 +23,8 @@ const {
   uploadProfileImage,
   addUserDetails,
   getAuthenticatedUser,
+  getUserDetails,
+  markNotificationsRead,
 } = require("./handlers/users");
 
 // Posts Routes
@@ -43,6 +45,8 @@ app.post("/login", login);
 app.post("/user/image", FBAuth, uploadProfileImage);
 app.post("/user", FBAuth, addUserDetails);
 app.get("/user", FBAuth, getAuthenticatedUser);
+app.get("/user/:handle", getUserDetails);
+app.post("/notifications", FBAuth, markNotificationsRead);
 
 //https://github.com/AlexanderHMagno/ideally_functions/tree/master/functions/handlers
 exports.api = functions.https.onRequest(app);
