@@ -65,11 +65,7 @@ exports.login = async (req, res) => {
     res.status(200).json({ token });
   } catch (err) {
     console.error(err);
-    if (err.code === "auth/wrong-password") {
-      res.status(403).json({ general: "Wrong credentials, please try again" });
-    } else {
-      res.status(500).json({ error: err.code });
-    }
+    res.status(403).json({ general: "Wrong credentials, please try again" });
   }
 };
 

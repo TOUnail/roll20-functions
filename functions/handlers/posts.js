@@ -7,12 +7,7 @@ exports.getAllPosts = async (req, res) => {
     data.forEach((doc) => {
       posts.push({
         postId: doc.id,
-        body: doc.data().body,
-        userHandle: doc.data().userHandle,
-        createdAt: doc.data().createdAt,
-        commentCount: doc.data().commentCount,
-        likeCount: doc.data().likeCount,
-        roll: doc.data().roll,
+        ...doc.data(),
       });
     });
     return res.json(posts);
@@ -86,7 +81,7 @@ exports.commentOnPost = async (req, res) => {
 
   try {
     if (req.body.body.trim() === "")
-      res.status(400).json({ error: "Must not be empty" });
+      res.status(400).json({ comment: "Must not be empty" });
 
     let data = await db.doc(`/posts/${req.params.postId}`).get();
     if (!data.exists) {

@@ -124,3 +124,94 @@ exports.deleteNotificationOnUnlike = functions.firestore
       console.error(err);
     }
   });
+
+exports.onUserImageChange = functions.firestore
+  .document("/users/{userId}")
+  .onUpdate(async (change, context) => {
+    const before = change.before.data().imageUrl;
+    const after = change.after.data().imageUrl;
+    const handle = context.params.handle;
+    const batch = db.batch();
+    if (before !== after) {
+      try {
+        const posts = await db
+          .collection("posts")
+          .where("userHandle", "==", handle)
+          .get();
+        posts.forEach((doc) => {
+          const post = db.doc(`/posts/${doc.id}`);
+          batch.update(post, { imageUrl: after });
+        });
+        const comments = await db
+          .collection("comments")
+          .where("userHandle", "==", handle)
+          .get();
+        comments.forEach((doc) => {
+          const comments = db.doc(`/commentss/${doc.id}`);
+          batch.update(comments, { imageUrl: after });
+        });
+        batch.commit();
+      } catch (err) {
+        console.log(err);
+      }
+    }
+  });
+
+exports.onPostDelete = functions.firestore
+  .document("/posts/{postId}")
+  .onDelete(async (snapshot, context) => {
+    const postId = context.params.postId;
+    const batch = db.batch();
+    try {
+      const comments = await db
+        .collection("comments")
+        .where("postId", "==", postId)
+        .get();
+      comments.forEach((doc) => {
+        batch.delete(db.doc(`/comments/${doc.id}`));
+      });
+      const likes = await db
+        .collection("likes")
+        .where("postId", "==", postId)
+        .get();
+      likes.forEach((doc) => {
+        batch.delete(db.doc(`/likes/${doc.id}`));
+      });
+      const notifications = await db
+        .collection("notifications")
+        .where("postId", "==", postId)
+        .get();
+      notifications.forEach((doc) => {
+        batch.delete(db.doc(`/notifications/${doc.id}`));
+      });
+      await batch.commit();
+    } catch (err) {
+      console.log(err);
+    }
+  });
+
+exports.onCommentDelete = functions.firestore
+  .document("/comments/{commentId}")
+  .onDelete(async (snapshot, context) => {
+    const commentId = context.params.commentId;
+    const batch = db.batch();
+    try {
+      const likes = await db
+        .collection("likes")
+        .where("commentId", "==", commentId)
+        .get();
+      likes.forEach((doc) => {
+        batch.delete(db.doc(`/likes/${doc.id}`));
+      });
+      const notifications = await db
+        .collection("notifications")
+        .where("commentId", "==", commentId)
+        .get();
+      notifications.forEach((doc) => {
+        batch.delete(db.doc(`/notifications/${doc.id}`));
+      });
+      await batch.commit();
+    } catch (err) {
+      console.log(err);
+    }
+  });
