@@ -40,9 +40,8 @@ exports.validateLoginData = (data) => {
 
 exports.reduceUserDetails = (data) => {
   let userDetails = {};
-
   if (!isEmpty(data.alignment.trim())) userDetails.alignment = data.alignment;
   if (!isEmpty(data.title.trim())) userDetails.title = data.title;
-
+  if (!isEmpty(data.location.trim())) userDetails.location = data.location;
   return userDetails;
 };
