@@ -32,7 +32,7 @@ exports.signup = async (req, res) => {
         handle: newUser.handle,
         email: newUser.email,
         createdAt: new Date().toISOString(),
-        imageUrl: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2Fno-img.png?alt=media`,
+        userImage: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2Fno-img.png?alt=media`,
         userId: data.user.uid,
       };
       await db.doc(`users/${newUser.handle}`).set(userCredentials);

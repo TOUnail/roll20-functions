@@ -129,7 +129,7 @@ exports.onUserImageChange = functions.firestore
   .onUpdate(async (change, context) => {
     const before = change.before.data().imageUrl;
     const after = change.after.data().imageUrl;
-    const handle = context.params.handle;
+    const handle = context.params.userId;
     const batch = db.batch();
     if (before !== after) {
       try {
@@ -139,15 +139,15 @@ exports.onUserImageChange = functions.firestore
           .get();
         posts.forEach((doc) => {
           const post = db.doc(`/posts/${doc.id}`);
-          batch.update(post, { imageUrl: after });
+          batch.update(post, { userImage: after });
         });
         const comments = await db
           .collection("comments")
           .where("userHandle", "==", handle)
           .get();
         comments.forEach((doc) => {
-          const comments = db.doc(`/commentss/${doc.id}`);
-          batch.update(comments, { imageUrl: after });
+          const comments = db.doc(`/comments/${doc.id}`);
+          batch.update(comments, { userImage: after });
         });
         batch.commit();
       } catch (err) {
