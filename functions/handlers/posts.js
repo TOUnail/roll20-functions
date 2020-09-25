@@ -54,8 +54,10 @@ exports.getPost = async (req, res) => {
         postData.comments.push({
           postId: comment.data().postId,
           body: comment.data().body,
+          userImage: comment.data().userImage,
           userHandle: comment.data().userHandle,
           createdAt: comment.data().createdAt,
+          likeCount: comment.data().likeCount,
           commentId: comment.id,
         });
       });
