@@ -180,7 +180,7 @@ exports.likeComment = async (req, res) => {
       if (commentDocument.exists) {
         let likeCount = { likeCount: 1 };
         let commentData = commentDocument.data();
-        if (commentData.likecount)
+        if (commentData.likeCount)
           likeCount.likeCount = commentData.likeCount + 1;
         await db.doc(`/comments/${req.params.commentId}`).update(likeCount);
         await db.collection("likes").add({
@@ -239,6 +239,30 @@ exports.unlikeComment = async (req, res) => {
   }
 };
 
+exports.deleteComment = async (req, res) => {
+  const document = db.doc(`/comments/${req.params.commentId}`);
+  const getDocument = await document.get();
+
+  if (getDocument.exists) {
+    if (getDocument.data().userHandle !== req.user.handle) {
+      res.status(403).json({ error: "Unauthorized" });
+    } else {
+      const postId = getDocument.data().postId;
+      const post = await db.doc(`/posts/${postId}`).get();
+      let postInfoCommentCount = post.data().commentCount;
+      let commentCount = { commentCount: 0 };
+      if (postInfoCommentCount) {
+        commentCount.commentCount = postInfoCommentCount.commentCount - 1;
+      }
+      await db.doc(`/posts/${postId}`).update(commentCount);
+      await document.delete();
+      res.status(200).json({ message: "Comment has been deleted" });
+    }
+  } else {
+    res.status(404).json({ message: "Comment not found" });
+  }
+};
+
 exports.deletePost = async (req, res) => {
   const document = db.doc(`/posts/${req.params.postId}`);
   const getDocument = await document.get();
@@ -252,21 +276,5 @@ exports.deletePost = async (req, res) => {
     }
   } else {
     res.status(404).json({ message: "Post not found" });
-  }
-};
-
-exports.deleteComment = async (req, res) => {
-  const document = db.doc(`/comments/${req.params.commentId}`);
-  const getDocument = await document.get();
-
-  if (getDocument.exists) {
-    if (getDocument.data().userHandle !== req.user.handle) {
-      res.status(403).json({ error: "Unauthorized" });
-    } else {
-      await document.delete();
-      res.status(200).json({ message: "Comment has been deleted" });
-    }
-  } else {
-    res.status(404).json({ message: "Comment not found" });
   }
 };
