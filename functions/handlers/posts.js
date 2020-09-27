@@ -247,16 +247,25 @@ exports.deleteComment = async (req, res) => {
     if (getDocument.data().userHandle !== req.user.handle) {
       res.status(403).json({ error: "Unauthorized" });
     } else {
-      const postId = getDocument.data().postId;
-      const post = await db.doc(`/posts/${postId}`).get();
-      let postInfoCommentCount = post.data().commentCount;
-      let commentCount = { commentCount: 0 };
-      if (postInfoCommentCount) {
-        commentCount.commentCount = postInfoCommentCount.commentCount - 1;
-      }
-      await db.doc(`/posts/${postId}`).update(commentCount);
       await document.delete();
-      res.status(200).json({ message: "Comment has been deleted" });
+      const commentData = getDocument.data();
+      let data = await db.doc(`/posts/${commentData.postId}`).get();
+      let postData = data.data();
+      let commentCount = { commentCount: 0 };
+      if (postData.commentCount) {
+        commentCount.commentCount = postData.commentCount - 1;
+      }
+      await db.doc(`/posts/${commentData.postId}`).update(commentCount);
+      res.status(200).json({
+        message: "Comment has been deleted",
+        ...commentCount,
+        commentId: commentData.commentId,
+        postData: {
+          ...postData,
+          ...commentCount,
+          postId: commentData.postId,
+        },
+      });
     }
   } else {
     res.status(404).json({ message: "Comment not found" });
