@@ -72,7 +72,7 @@ exports.getPost = async (req, res) => {
 };
 
 exports.commentOnPost = async (req, res) => {
-  const newComment = {
+  let newComment = {
     body: req.body.body,
     createdAt: new Date().toISOString(),
     postId: req.params.postId,
@@ -89,10 +89,11 @@ exports.commentOnPost = async (req, res) => {
     if (!data.exists) {
       res.status(404).json({ error: "Post not found" });
     }
-    await db.collection("comments").add(newComment);
+    let commentData = await db.collection("comments").add(newComment);
     await db
       .doc(`/posts/${req.params.postId}`)
       .update({ commentCount: data.data().commentCount + 1 });
+    newComment = { ...newComment, commentId: commentData.id };
     res.json(newComment);
   } catch (err) {
     console.error(err);
@@ -242,6 +243,7 @@ exports.unlikeComment = async (req, res) => {
 exports.deleteComment = async (req, res) => {
   const document = db.doc(`/comments/${req.params.commentId}`);
   const getDocument = await document.get();
+  const commentId = req.params.commentId;
 
   if (getDocument.exists) {
     if (getDocument.data().userHandle !== req.user.handle) {
@@ -259,7 +261,7 @@ exports.deleteComment = async (req, res) => {
       res.status(200).json({
         message: "Comment has been deleted",
         ...commentCount,
-        commentId: commentData.commentId,
+        commentId: commentId,
         postData: {
           ...postData,
           ...commentCount,
