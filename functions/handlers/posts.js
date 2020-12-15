@@ -25,6 +25,7 @@ exports.postOnePost = async (req, res) => {
     likeCount: 0,
     commentCount: 0,
     roll: Math.floor(Math.random() * 20) + 1,
+    rollNeeded: Math.floor(Math.random() * (19 - 2) + 2),
   };
   try {
     let data = await db.collection("posts").add(newPost);
