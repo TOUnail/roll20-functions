@@ -190,8 +190,8 @@ exports.uploadProfileImage = async (req, res) => {
             },
           },
         });
-      const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2F${imageFileName}?alt=media`;
-      await db.doc(`/users/${req.user.handle}`).update({ imageUrl });
+      const userImage = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2F${imageFileName}?alt=media`;
+      await db.doc(`/users/${req.user.handle}`).update({ userImage });
       res.json({ message: "Image uploaded successfully" });
     } catch (err) {
       console.error(err);
