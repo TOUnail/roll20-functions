@@ -20,7 +20,7 @@ exports.postOnePost = async (req, res) => {
   let newPost = {
     body: req.body.body,
     userHandle: req.user.handle,
-    userImage: req.user.userImage,
+    userImage: req.user.imageUrl,
     createdAt: new Date().toISOString(),
     likeCount: 0,
     commentCount: 0,
@@ -78,7 +78,7 @@ exports.commentOnPost = async (req, res) => {
     createdAt: new Date().toISOString(),
     postId: req.params.postId,
     userHandle: req.user.handle,
-    userImage: req.user.userImage,
+    userImage: req.user.imageUrl,
     likeCount: 0,
   };
 

@@ -32,7 +32,7 @@ exports.signup = async (req, res) => {
         handle: newUser.handle,
         email: newUser.email,
         createdAt: new Date().toISOString(),
-        userImage: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2Fno-img.png?alt=media`,
+        imageUrl: `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2Fno-img.png?alt=media`,
         userId: data.user.uid,
       };
       await db.doc(`users/${newUser.handle}`).set(userCredentials);
@@ -190,8 +190,8 @@ exports.uploadProfileImage = async (req, res) => {
             },
           },
         });
-      const userImage = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2F${imageFileName}?alt=media`;
-      await db.doc(`/users/${req.user.handle}`).update({ userImage });
+      const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${config.storageBucket}/o/profile%2F${imageFileName}?alt=media`;
+      await db.doc(`/users/${req.user.handle}`).update({ imageUrl });
       res.json({ message: "Image uploaded successfully" });
     } catch (err) {
       console.error(err);
